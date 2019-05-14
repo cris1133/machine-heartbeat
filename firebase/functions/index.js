@@ -20,18 +20,24 @@ exports.api = functions.https.onRequest(app);
 
 exports.scheduled_function = functions.pubsub.schedule('* * * * *').onRun((context) => {
   function find_offline() {
-    db = firebase.database()
-    ref = db.ref('/')
-    current_epoch = Date.now()
-    ref.orderByChild('last_heartbeat').endAt(current_epoch-5000).once('value', function(data) {
-      var bulk_insert = {}
-      Object.keys(data.val()).forEach(function(key) {
-        bulk_insert[`${key}/online`] = false
-      });
-      ref.update(bulk_insert)
+    return new Promise((resolve, reject) => {
+      setTimeout(function(){
+        db = firebase.database()
+        ref = db.ref('/')
+        current_epoch = Date.now()
+        ref.orderByChild('last_heartbeat').endAt(current_epoch-5000).once('value', function(data) {
+          var bulk_insert = {}
+          try {
+            Object.keys(data.val()).forEach(function(key) {
+              bulk_insert[`${key}/online`] = false
+            });
+            ref.update(bulk_insert);
+          }
+          catch(err) {return true}
+        })
+        find_offline().then(resolve, reject).catch(error => {});
+      }, 6000);
     });
-    setTimeout(find_offline, 6000)
   }
-  find_offline()
-  return true
+  return find_offline()
 });

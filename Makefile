@@ -1,3 +1,2 @@
-
 release:
-	firebase deploy 
+	firebase deploy
